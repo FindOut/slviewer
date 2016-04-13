@@ -19,4 +19,4 @@ The schematic in file docschematic.json is displayed.
 
 The original schematic looks like this:
 
-[image](https://raw.githubusercontent.com/FindOut/slviewer/master/docschematic.png)
+![image](https://raw.githubusercontent.com/FindOut/slviewer/master/docschematic.png)
