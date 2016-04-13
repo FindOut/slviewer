@@ -1,0 +1,11 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX ns1: <http://mathworks.com/simulink/rdf#>
+PREFIX ns2: <http://mathworks.com/simulink/rdf#Model/>
+PREFIX ns3: <http://waals:8087/oslc4jsimulink/services/sldemo_househeat/blocks/>
+PREFIX ns4: <http://waals:8087/oslc4jsimulink/services/sldemo_househeat/lines/>
+construct {?s ?r ?o.}
+where {
+  ?s ?r ?o;
+    rdf:type ns1:Model;
+    ns2:name "sldemo_househeat"^^rdf:XMLLiteral.
+}

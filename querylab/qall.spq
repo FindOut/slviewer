@@ -1,0 +1,2 @@
+construct {}
+where {?s ?p ?o.}

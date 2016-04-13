@@ -1,0 +1,133 @@
+[
+  {
+    "name":"schematic",
+    "inPorts": [
+      {"no":1,"name":"vao"},
+      {"no":2,"name":"vbo"},
+      {"no":3,"name":"vco"},
+      {"no":4,"name":"T1"},
+      {"no":5,"name":"bve"}
+    ],
+    "outPorts": [
+      {"no":1,"name":"Te"},
+      {"no":2,"name":"bvr"},
+      {"no":3,"name":"ia"},
+      {"no":4,"name":"ib"},
+      {"no":5,"name":"ic"}
+    ],
+    "blocks": [
+      {"name":"o-to-n", "block":"o-to-n"},
+      {"name":"o-to-n", "block":"o-to-n"},
+      {"name":"abc-syn", "block":"abc-syn"},
+      {"name":"Induction Motor d-q model", "block":"Induction Motor d-q model"},
+      {"name":"syn-abc", "block":"syn-abc"},
+      {"name":"theta-e", "block":"theta-e"},
+      {"name":"SinCos", "block":"SinCos"}
+    ],
+    "lines": [
+      {"from": {"block": "schematic", "port":"vao"}, "to": {"block":"o-to-n", "port":"vao"}},
+      {"from": {"block": "schematic", "port":"vbo"}, "to": {"block":"o-to-n", "port":"vbo"}},
+      {"from": {"block": "schematic", "port":"vco"}, "to": {"block":"o-to-n", "port":"vco"}},
+      {"from": {"block": "schematic", "port":"T1"}, "to": {"block":"Induction Motor d-q model", "port":"T1"}},
+      {"from": {"block": "schematic", "port":"we"}, "to": {"block":"Induction Motor d-q model", "port":"we"}},
+      {"from": {"block": "schematic", "port":"we"}, "to": {"block":"theta-e", "port":"we"}},
+
+      {"from": {"block": "Induction Motor d-q model", "port":"Te"}, "to": {"block":"schematic", "port":"Te"}},
+      {"from": {"block": "Induction Motor d-q model", "port":"wr"}, "to": {"block":"schematic", "port":"wr"}},
+      {"from": {"block": "syn-abc", "port":"ia"}, "to": {"block":"schematic", "port":"ia"}},
+      {"from": {"block": "syn-abc", "port":"ib"}, "to": {"block":"schematic", "port":"ib"}},
+      {"from": {"block": "syn-abc", "port":"ic"}, "to": {"block":"schematic", "port":"ic"}},
+
+      {"from": {"block": "o-to-n", "port":"van"}, "to": {"block":"abc-syn", "port":"van"}},
+      {"from": {"block": "o-to-n", "port":"vbn"}, "to": {"block":"abc-syn", "port":"vbn"}},
+      {"from": {"block": "o-to-n", "port":"vcn"}, "to": {"block":"abc-syn", "port":"vcn"}},
+
+      {"from": {"block": "abc-syn", "port":"vqs"}, "to": {"block":"Induction Motor d-q model", "port":"Vqs"}},
+      {"from": {"block": "abc-syn", "port":"vds"}, "to": {"block":"Induction Motor d-q model", "port":"Vds"}},
+
+      {"from": {"block": "Induction Motor d-q model", "port":"iqs"}, "to": {"block":"syn-abc", "port":"iqs"}},
+      {"from": {"block": "Induction Motor d-q model", "port":"ids"}, "to": {"block":"syn-abc", "port":"ids"}},
+
+      {"from": {"block": "theta-e", "port":"theta-e"}, "to": {"block":"SinCos", "port":"u"}},
+
+      {"from": {"block": "SinCos", "port":"sin(u)"}, "to": {"block":"abc-syn", "port":"cos(theta-e)"}},
+      {"from": {"block": "SinCos", "port":"cos(u)"}, "to": {"block":"abc-syn", "port":"sin(theta-e)"}},
+      {"from": {"block": "SinCos", "port":"sin(u)"}, "to": {"block":"syn-abc", "port":"cos(theta-e)"}},
+      {"from": {"block": "SinCos", "port":"cos(u)"}, "to": {"block":"syn-abc", "port":"sin(theta-e)"}}
+    ]
+  },
+  {"name":"o-to-n",
+    "inPorts": [
+      {"name":"vao"},
+      {"name":"vbo"},
+      {"name":"vco"}
+    ],
+    "outPorts": [
+      {"name":"van"},
+      {"name":"vbn"},
+      {"name":"vcn"}
+    ]
+  },
+  {"name":"abc-syn",
+    "inPorts": [
+      {"name":"van"},
+      {"name":"vbn"},
+      {"name":"vcn"},
+      {"name":"cos(theta-e)"},
+      {"name":"sin(theta-e)"}
+    ],
+    "outPorts": [
+      {"name":"vqs"},
+      {"name":"vds"}
+    ]
+  },
+  {"name":"Induction Motor d-q model",
+    "inPorts": [
+      {"name":"Vqs"},
+      {"name":"Vds"},
+      {"name":"we"},
+      {"name":"T1"}
+    ],
+    "outPorts": [
+      {"name":"Te"},
+      {"name":"wr"},
+      {"name":"iqs"},
+      {"name":"ids"},
+      {"name":"iqr"},
+      {"name":"idr"}
+    ]
+  },
+  {
+    "name":"syn-abc",
+    "inPorts": [
+      {"name":"iqs"},
+      {"name":"ids"},
+      {"name":"cos(theta-e)"},
+      {"name":"sin(theta-e)"}
+    ],
+    "outPorts": [
+      {"name":"ia"},
+      {"name":"ib"},
+      {"name":"ic"}
+    ]
+  },
+  {
+    "name":"theta-e",
+    "inPorts": [
+      {"name":"we"}
+    ],
+    "outPorts": [
+      {"name":"theta-e"}
+    ]
+  },
+  {
+    "name":"SinCos",
+    "inPorts": [
+      {"name":"u"}
+    ],
+    "outPorts": [
+      {"name":"sin(u)"},
+      {"name":"cos(u)"}
+    ]
+  }
+]

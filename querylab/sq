@@ -1,0 +1,6 @@
+#!/bin/bash
+resultFormat=text/turtle
+if [ "$2" != "" ]; then
+   resultFormat=$2
+fi
+curl -i -H "Accept: $resultFormat" --data-urlencode "query=`cat $1`" http://localhost:8080/openrdf-sesame/repositories/SIMULINK
