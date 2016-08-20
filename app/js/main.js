@@ -1,9 +1,18 @@
 var d3 = require('d3');
 var _ = require('lodash');
+var Promise = require('es6-promise').Promise;
+
+var spq = encodeURIComponent(`PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT distinct ?subject WHERE { graph ?g {?subject rdf:type <http://mathworks.com/simulink/rdf#Model>}} LIMIT 500`);
+console.log(spq);
+fetchXml('https://vservices.offis.de/rtp/fuseki/v1.0/ldr/query?query=' + spq).then(function(xml) {
+  console.log(xml);
+});
 
 var r = 20,
   width = 1000,
   height = 800;
+
+var layoutReady = false;
 
 var svg = d3.select('#graph')
   .append('svg')
@@ -32,7 +41,7 @@ var force = d3.layout.force()
   .size([width, height]);
 
 function render() {
-  d3.json('sch', function(error, data) {
+  d3.json('schematic', function(error, data) {
     var blockByName = _.keyBy(data, 'name');
     console.log(blockByName);
     var dataLinks = blockByName['schematic'].lines, fixedLinks = [];
@@ -65,13 +74,26 @@ function render() {
       var nodes = diagramSite.selectAll('.node')
         .data(data, d=>d.name);
 
+      var drag = d3.behavior.drag();
+
       var nodesEnter = nodes.enter()
         .append('g')
         .attr('class', 'node')
-        .attr('transform', 'translate(50, 50)')
-        .call(force.drag);
+        // .attr('transform', 'translate(50, 50)')
+        .call(drag);
 
-      nodesEnter.append('rect');
+      drag
+      .origin(d=>d)
+      .on('drag', function(d) {
+        console.log(d);
+        //d3.select(this).attr('transform', 'translate(' + d3.event.x + ', ' + d3.event.y + ')');
+        d.x = d3.event.x;
+        d.y = d3.event.y;
+        updatePoses();
+      });
+
+      nodesEnter.append('rect')
+        .attr('fill', '#ffffff');
 
       nodesEnter.append('text')
         .text(d=>d.name)
@@ -137,8 +159,18 @@ function render() {
       lines.exit()
         .remove();
 
-      force.on("tick", function() {
+      force
+      .on('end', function() {
+        layoutReady = true;
+        console.log('end of autolayouting');
+      })
+      .on("tick", function() {
+        if (!layoutReady) {
+          updatePoses();
+        }
+      });
 
+      function updatePoses() {
         var q = d3.geom.quadtree(data),
           i = 0,
           n = data.length;
@@ -173,17 +205,17 @@ function render() {
                 return fromBlock.x + fromBlock.width;
               })
               .attr("y1", function(d) {
-                return fromBlock.y + yByPortIndex(fromBlock.outPortIndexByName[d.from.port]);
+                return fromBlock.y + yByPortIndex(fromBlock.outPortIndexByName[d.from.port]) - 5;
               })
               .attr("x2", function(d) {
                 return toBlock.x;
               })
               .attr("y2", function(d) {
-                return toBlock.y + yByPortIndex(toPortIndex);
+                return toBlock.y + yByPortIndex(toPortIndex) - 5;
               });
           }
         });
-      });
+      }
     }
   });
 }
@@ -217,3 +249,24 @@ d3.select('#reload').on('click', function() {
 })
 
 render();
+
+export function fetchGraph(url, tripleMap) {
+  return fetchXml(url).then(function(urlData) {
+    return parser.parse(urlData);
+  });
+}
+
+export function fetchXml(url) {
+  // console.log('fetchXml', url);
+  return new Promise(function(fulfill, reject) {
+    d3.xml('http://localhost:3011/proxy?url=' + encodeURIComponent(url), function(error, doc) {
+      if (error) {
+        // console.log('fetchXml error', error);
+        reject(error);
+      } else {
+        // console.log('fetchXml document', doc);
+        fulfill(doc);
+      }
+    });
+  });
+}

@@ -4,9 +4,6 @@
   "description": "view schema with bugzilla refs",
   "main": "getdata.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "scripts": {
     "start": "node server.js"
   },
   "author": "dag.rende@find-out.se",
@@ -23,6 +20,7 @@
   },
   "dependencies": {
     "d3": "^3.5.16",
+    "es6-promise": "^3.2.1",
     "lodash": "^4.7.0"
   }
 }
