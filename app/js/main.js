@@ -1,5 +1,5 @@
-var d3 = require('d3');
-var _ = require('lodash');
+import * as d3 from './d3';
+import _ from 'lodash';
 
 var r = 20,
   width = 1000,
@@ -24,12 +24,9 @@ svg.append('defs').append('marker')
   .attr("d", 'M0,-5 L10,0 L0,5')
   .attr('fill', 'black');
 
-var force = d3.layout.force()
-  .charge(function(d, i) {
-    return i == 0 ? -1000 : -500;
-  })
-  .linkDistance(200)
-  .size([width, height]);
+let simulation = d3.forceSimulation()
+  .force("link", d3.forceLink().id(function(d) {return d.name; }))
+  .force("charge", d3.forceManyBody());
 
 function render() {
   d3.json('sch', function(error, data) {
@@ -57,19 +54,24 @@ function render() {
         };
       });
 
-      force.nodes(data)
-        .links(fixedLinks)
-        .start();
+      simulation
+        .force("center", d3.forceCenter(width / 2, height / 2));
+      simulation.nodes(data);
+      simulation.force("link").links(fixedLinks).distance(200);
+      simulation.on("tick", tick);
+      simulation.on('end', function(d) { console.log('end');});
+      simulation.alphaMin(0.5);
 
       // render node
       var nodes = diagramSite.selectAll('.node')
         .data(data, d=>d.name);
 
+      nodes.exit().remove();
+
       var nodesEnter = nodes.enter()
         .append('g')
         .attr('class', 'node')
-        .attr('transform', 'translate(50, 50)')
-        .call(force.drag);
+        .attr('transform', 'translate(50, 50)');
 
       nodesEnter.append('rect');
 
@@ -85,7 +87,16 @@ function render() {
         .text('')
         .attr('class', 'outPorts');
 
-      nodes.each(function(d) {
+      nodesEnter
+        .call(d3.drag().on('drag', function(d) {
+          d.x = d3.event.x;
+          d.y = d3.event.y;
+          tick();
+        }));
+
+      let nodesEnterUpdate = nodesEnter.merge(nodes);
+
+      nodesEnterUpdate.each(function(d) {
         var g = d3.select(this);
         var rect = g.select('rect');
 
@@ -122,24 +133,22 @@ function render() {
 
       });
 
-      nodes.exit()
-        .remove();
 
       // render lines
       var lines = diagramSite.selectAll('.line')
         .data(dataLinks, d=>d.from.block + '_' + d.from.port + '_' + d.to.block + '_' + d.to.port);
+
+      lines.exit().remove();
 
       var linesEnter = lines.enter()
         .append('line')
         .attr('class', 'line')
         .attr('marker-end', 'url(#markerArrowEnd)');
 
-      lines.exit()
-        .remove();
+      let linesEnterUpdate = linesEnter.merge(lines);
 
-      force.on("tick", function() {
-
-        var q = d3.geom.quadtree(data),
+      function tick() {
+        var q = d3.quadtree().addAll(data),
           i = 0,
           n = data.length;
 
@@ -155,13 +164,13 @@ function render() {
           .attr('height', bounds.height + 1000);
         diagramSite.attr('transform', 'translate(' + -bounds.x + ',' + -bounds.y + ')');
 
-        nodes.each(function(d) {
+        nodesEnterUpdate.each(function(d) {
           d3.select(this)
             .attr('transform', 'translate(' + d.x + ', ' + d.y + ')');
 
         });
 
-        lines.each(function(d) {
+        linesEnterUpdate.each(function(d) {
           if (d.from.block !== 'schematic' && d.to.block !== 'schematic') {
             var fromBlock = blockByName[d.from.block],
               fromPortIndex = fromBlock.outPortIndexByName[d.from.port],
@@ -183,7 +192,7 @@ function render() {
               });
           }
         });
-      });
+      }
     }
   });
 }
