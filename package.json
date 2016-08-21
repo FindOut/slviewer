@@ -4,9 +4,6 @@
   "description": "view schema with bugzilla refs",
   "main": "getdata.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "scripts": {
     "start": "node server.js"
   },
   "author": "dag.rende@find-out.se",
@@ -22,7 +19,13 @@
     "webpack-dev-middleware": "^1.5.1"
   },
   "dependencies": {
-    "d3": "^3.5.16",
+    "d3-array": "^1.0.1",
+    "d3-dispatch": "^1.0.1",
+    "d3-drag": "^1.0.1",
+    "d3-force": "^1.0.2",
+    "d3-quadtree": "^1.0.1",
+    "d3-request": "^1.0.2",
+    "d3-selection": "^1.0.2",
     "lodash": "^4.7.0"
   }
 }
