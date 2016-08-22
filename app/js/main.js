@@ -1,4 +1,4 @@
-import * as d3 from './d3';
+import * as d3 from './modeling/d3';
 import _ from 'lodash';
 
 var r = 20,
