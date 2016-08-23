@@ -1,5 +1,9 @@
 import * as d3 from './d3';
 import _ from 'lodash';
+import {SimulinkConnector, getModelChildren, getModelComponent, getRelations, getRelationComponent} from './simulink-connector.js';
+
+let connector = new SimulinkConnector();
+
 
 var r = 20,
   width = 1000,

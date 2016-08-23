@@ -1,0 +1,4 @@
+curl -v -u 'dag.rende@find-out.se:98XV\Qn$IHNk?Lgd' -H "Accept: application/rdf+xml" \
+--data-urlencode \
+'query=construct {} where {<https://vservices.offis.de/rtp/simulink/v1.0/services/model11/model/> ?p ?o.}' \
+https://vservices.offis.de/rtp/fuseki/v1.0/ldr/query

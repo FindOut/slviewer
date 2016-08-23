@@ -26,6 +26,7 @@
     "d3-quadtree": "^1.0.1",
     "d3-request": "^1.0.2",
     "d3-selection": "^1.0.2",
-    "lodash": "^4.7.0"
+    "lodash": "^4.7.0",
+    "rdf-parser-rdfxml": "https://github.com/FindOut/rdf-parser-rdfxml"
   }
 }
