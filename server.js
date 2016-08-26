@@ -7,13 +7,12 @@ var http = require('request');
 var fs = require('fs');
 
 var port = 3010;
-var useCache = false;
+var useCache = true;
 
 var app = express();
 app.use(webpackDevMiddleware(webpack(config), {}));
 
 app.get('/proxy', function (request, response) {
-  console.log('get /proxy');
   response.header('Access-Control-Allow-Origin', '*');
   response.header('Cache-Control', 'no-cache, no-store, must-revalidate');
   response.header('Pragma', 'no-cache');
@@ -64,9 +63,23 @@ if (!fs.existsSync(cacheFolder)) {
   fs.mkdirSync(cacheFolder);
 }
 
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr, len;
+  if (this.length === 0) return hash;
+  for (i = 0, len = this.length; i < len; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
+
 function saveToCache(url, result) {
-  //fs.writeFile(path.join(cacheFolder, encodeURIComponent(url)) + '.xml', result, 'utf8');
+  var queryIndex = url.indexOf('?query=');
+  var sparql = queryIndex !== -1 ? decodeURIComponent(url.substring(queryIndex + 7)) : '';
+  fs.writeFile(path.join(cacheFolder, 'hash' + url.hashCode()) + '.query', url + '\n' + sparql, 'utf8');
+  fs.writeFile(path.join(cacheFolder, 'hash' + url.hashCode()) + '.xml', result, 'utf8');
 }
 function getFromCache(url) {
-  return fs.readFileSync(path.join(cacheFolder, encodeURIComponent(url)) + '.xml', 'utf8');
+  return fs.readFileSync(path.join(cacheFolder, 'hash' + url.hashCode()) + '.xml', 'utf8');
 }

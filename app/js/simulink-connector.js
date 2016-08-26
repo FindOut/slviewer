@@ -21,11 +21,19 @@ let schemaDomainType = parser.rdf.createNamedNode(OSLCKTH('hasResourceShape'));
 let currentGraph;
 
 export var modelComponent = new ModelComponent('domain', modelNameInfoGetter).layout(new VBoxLayout().margin(10));
-export var blockComponent = new ModelComponent('block', d => {return {name: d, domain: d}}).layout(new VBoxLayout().margin(10));
+export var blockComponent = new ModelComponent('block', blockNameInfoGetter).layout(new VBoxLayout().margin(10));
 var relationComponent = new RelationComponent('relation', d => [d.text]);
 
 function modelNameInfoGetter(dn) {
   let prefix = getOneObjectString(currentGraph, dn, SIMULINK('Model/name'));
+  return {
+    name: prefix,
+    domain: parser.rdf.prefixes[prefix]
+  }
+}
+
+function blockNameInfoGetter(dn) {
+  let prefix = getOneObjectString(currentGraph, dn, SIMULINK('Block/name'));
   return {
     name: prefix,
     domain: parser.rdf.prefixes[prefix]
@@ -110,76 +118,59 @@ export function getRdfType(s) {
   }
 }
 
-function fusekiUrl(sparql) {
-  return 'https://vservices.offis.de/rtp/fuseki/v1.0/ldr/query?query='
-    + encodeURIComponent(sparql);
-}
-
-export function SimulinkConnector() {
-    var listeners = [];
-
-    function open(catalogUrls) {
-      fireEvent('read-begin');
-      currentGraph = parser.rdf.createGraph();
-
-      let url = fusekiUrl(
-        `construct {?s ?p ?o.}
-        where {graph ?g {
-          ?s ?p ?o.
-          <https://vservices.offis.de/rtp/simulink/v1.0/services/model11/model/> ?p ?o.}
-        }`);
-      fetchGraph(url).then(function(graph) {
-        console.log('graph', graphToString(graph));
-
-        currentGraph = graph;
-        fireEvent('read-end');
-      });
-    }
-
-  function fireEvent(type, data) {
-    _.each(listeners, function(listener) {
-      listener(type, data);
-    });
-  }
-
-  return {
-    on: function(listener) {
-      listeners.push(listener);
-    },
-    open: open
-  };
-}
+let modelId = 'https://vservices.offis.de/rtp/simulink/v1.0/services/model11/model/';
 
 // returns a list of children of parentData
 // parentData=undefined: list of domain URIs
 // parentData=a domain uri: list of resource type uris in this domain
 // other: empty list
-export function getModelChildren(parentData) {
+export function getModelChildren(parentData, allData, level) {
   if (parentData) {
     let type = getRdfType(parentData);
     if (type === SIMULINK('Model')) {
       let resourceTypeTriples = currentGraph.match(parentData, SIMULINK('Model/block'), null);
       let arr = _.map(resourceTypeTriples.toArray(), t => t.object.toString());
-      console.log(resourceTypeTriples);
-      return _.uniq(
-        _.filter(arr, d=>d.indexOf('::') === -1));
+      return _.uniq(_.filter(arr, d=>d.indexOf('::') === -1));
+      // return _.uniq(arr);
     } else {
       return [];
     }
   } else {
     // top level - return list of models
-    let modelTriples = currentGraph.match(null, RDF('type'), null);
+    let modelTriples = currentGraph.match(null, RDF('type'), SIMULINK('Model'));
     return _.uniq(_.map(modelTriples.toArray(), t => t.subject.toString()));
   }
 }
 
 export function getModelComponent(d) {
-  if (d.indexOf('/blocks/') !== -1) {
-    return blockComponent;
-  }
   return {
-    'http://mathworks.com/simulink/rdf#Model': modelComponent
+    'http://mathworks.com/simulink/rdf#Model': modelComponent,
+    'http://mathworks.com/simulink/rdf#Block': blockComponent
   }[getRdfType(d)];
+}
+
+// returns all relations as a list of {type: 'relation', from: sourceResourceTypeUri, to: targetResourceTypeUri}
+export function getModelRelations(parentData) {
+  if (parentData) {
+    return [];
+  } else {
+    let rels = [];
+    matchForEachTriple(currentGraph, null, OSLCKTH('hasResourceShape'), null, function(resourceShapeUriTriple) {
+      let resourceTypeUri = resourceShapeUriTriple.subject.toString();
+      let prefixRegExp = getPrefixRegExp(resourceTypeUri);
+      matchForEachTriple(currentGraph, resourceShapeUriTriple.object, OSLC('property'), null, function(propertyUriTriple) {
+        let range = getOneObject(currentGraph, propertyUriTriple.object, OSLC('range'));
+        if (range) {
+          let name = getOneObjectString(currentGraph, propertyUriTriple.object, OSLC('propertyDefinition'));
+          let text = parser.rdf.prefixes.shrink(name).replace(prefixRegExp, '');
+          let id = resourceShapeUriTriple.subject.toString() + '-' + range.toString() + '-' + text;
+          let relationItem = {id: id, type: 'relation', text: text, from: resourceShapeUriTriple.subject.toString(), to: range.toString()};
+          rels.push(relationItem);
+        }
+      });
+    });
+    return rels;
+  }
 }
 
 export function SimulinkConnector() {
@@ -189,15 +180,33 @@ export function SimulinkConnector() {
       fireEvent('read-begin');
       currentGraph = parser.rdf.createGraph();
 
+      function getResourceUrl(resourceId) {
+        return fusekiUrl(`construct {?s ?p ?o.}
+          where {graph ?g {
+            ?s ?p ?o.
+            ${resourceId} ?p ?o.}
+          }`)
+      }
 
-      let url = fusekiUrl(`construct {?s ?p ?o.}
-where {graph ?g {
-  ?s ?p ?o.
-  <https://vservices.offis.de/rtp/simulink/v1.0/services/model11/model/> ?p ?o.}
-}`);
-      fetchGraph(url).then(function(graph) {
-        console.log('graph', graphToString(graph));
+      fetchGraph(getResourceUrl('<' + modelId + '>')).then(function(graph) {
         currentGraph = graph;
+        // fetch model blocks
+        let blockTriples = currentGraph.match(null, SIMULINK('Model/block'), null);
+        let blockIds = _.map(blockTriples.toArray(), blockTriple => blockTriple.object.toString());
+        return Promise.all(_.map(blockIds, blockId => fetchGraph(getResourceUrl('<' + blockId + '>'))));
+      }).then(function(blockGraphs) {
+        for (let blockGraph of blockGraphs) {
+          currentGraph.addAll(blockGraph.toArray());
+        }
+        // fetch model lines
+        let lineTriples = currentGraph.match(null, SIMULINK('Model/line'), null);
+        let lineIds = _.map(lineTriples.toArray(), lineTriple => lineTriple.object.toString());
+        return Promise.all(_.map(lineIds, lineId => fetchGraph(getResourceUrl('<' + lineId + '>'))));
+      }).then(function(lineGraphs) {
+        for (let lineGraph of lineGraphs) {
+          currentGraph.addAll(lineGraph.toArray());
+        }
+        // console.log('currentGraph', graphToString(currentGraph));
         fireEvent('read-end');
       });
 
@@ -217,6 +226,11 @@ where {graph ?g {
     open: open
   };
 
+}
+
+function fusekiUrl(sparql) {
+  return 'https://vservices.offis.de/rtp/fuseki/v1.0/ldr/query?query='
+    + encodeURIComponent(sparql);
 }
 
 // returns an object having the methods:

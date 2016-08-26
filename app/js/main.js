@@ -17,12 +17,16 @@ let nodeHierarchyComponent = new HierarchyComponent(getModelChildren, getModelCo
 let relationHierarchyComponent = new HierarchyComponent(getRelations, getRelationComponent);
 
 function renderModel() {
-  svgComponent(d3.select('#graph'), [{id: 'ws'}]);
-  nodeHierarchyComponent(d3.select('#graph svg'));
-  svgComponent.layout()(d3.select('#graph svg'));
-  //relationHierarchyComponent(d3.select('#graph svg'));
+  try {
+    svgComponent(d3.select('#graph'), [{id: 'ws'}]);
+    nodeHierarchyComponent(d3.select('#graph svg'));
+    svgComponent.layout()(d3.select('#graph svg'));
+    //relationHierarchyComponent(d3.select('#graph svg'));
 
-  d3.selectAll('.node').call(nodeManipulator);
+    d3.selectAll('.node').call(nodeManipulator);
+  } catch (e) {
+    console.error('renderModel', e, e.stack);
+  }
 }
 
 connector.on(function(eventType) {

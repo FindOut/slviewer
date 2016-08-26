@@ -27,6 +27,10 @@ svg {
   stroke: #999;
 }
 
+.node.block {
+  fill: #eee;
+}
+
 .node.resourceType {
   fill: #f8f8f8;
   stroke: #999;
