@@ -8,27 +8,28 @@ import {utils, VBoxLayout} from './modeling/index.js';
 // nodeClass is used to type the rendered g elements
 export default function ModelComponent(nodeClass, domainNameInfoGetter) {
   var defaultSize = {width: 50, height: 30};
+
   function render(parentElement, dataArray) {
     var nodes = parentElement.selectAll('.' + nodeClass)
-      .data(dataArray, d => d);
+      .data(dataArray, d => d.id);
 
     nodes.exit().remove();
 
     var nodesEnter = nodes.enter().append('g')
         .attr('class', "node " + nodeClass)
-        .attr('id', d => 'node_' + d)
+        .attr('id', d => 'node_' + d.id)
         .each(function(d) {
           this.fomod = geometryFunctions;
         });
     nodesEnter.append('rect')
           .attr(defaultSize);
     nodesEnter.append('text').attr('class', 'title');
-    nodesEnter.append('title').text(d=>domainNameInfoGetter(d).domain);
+    nodesEnter.append('title').text(d=>domainNameInfoGetter(d.id).domain);
 
     let nodesUpdateEnter = nodesEnter.merge(nodes);
 
     var nodeRows = nodesUpdateEnter.select('text').selectAll('tspan')
-      .data(d => [domainNameInfoGetter(d).name]);
+      .data(d => [domainNameInfoGetter(d.id).name]);
 
     nodeRows.exit().remove();
 

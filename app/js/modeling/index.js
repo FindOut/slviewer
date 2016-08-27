@@ -4,6 +4,7 @@
   export {HBoxLayout} from './hbox-layout';
   export {VBoxLayout} from './vbox-layout';
   export {XyLayout} from './xy-layout';
+  export {ForceLayout} from './force-layout';
   export {HierarchyComponent} from './hierarchy-component';
   export {HttpConnector} from './httpconnector';
   export {Manipulator} from './manipulator';

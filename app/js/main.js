@@ -3,7 +3,7 @@ import {
   SvgComponent, HBoxLayout, VBoxLayout, HierarchyComponent, Manipulator,
   MoveNodeTool, CreateMoveRelationTool, SelectTool, utils
 } from './modeling/index.js';
-import {SimulinkConnector, getModelChildren, getModelComponent, getRelations, getRelationComponent, getRdfType, renderHtml} from './simulink-connector.js';
+import {SimulinkConnector, getModelChildren, getModelComponent, getModelRelations, getRelationComponent, getRdfType, renderHtml} from './simulink-connector.js';
 
 let connector = new SimulinkConnector();
 
@@ -14,14 +14,14 @@ urlField.onchange = function() {connector.open(urlField.value);};
 
 let svgComponent = new SvgComponent('top').layout(new HBoxLayout().margin(10));
 let nodeHierarchyComponent = new HierarchyComponent(getModelChildren, getModelComponent);
-let relationHierarchyComponent = new HierarchyComponent(getRelations, getRelationComponent);
+let relationHierarchyComponent = new HierarchyComponent(getModelRelations, getRelationComponent);
 
 function renderModel() {
   try {
     svgComponent(d3.select('#graph'), [{id: 'ws'}]);
     nodeHierarchyComponent(d3.select('#graph svg'));
     svgComponent.layout()(d3.select('#graph svg'));
-    //relationHierarchyComponent(d3.select('#graph svg'));
+    relationHierarchyComponent(d3.select('#graph svg'));
 
     d3.selectAll('.node').call(nodeManipulator);
   } catch (e) {

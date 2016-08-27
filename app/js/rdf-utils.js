@@ -102,12 +102,24 @@ export function getOneObject(graph, subject, predicate) {
 
 // returns the first object having the specified subject and predicate as a string, or null if not found
 export function getOneObjectString(graph, subject, predicate) {
-  let triples = graph.match(subject, predicate, null);
+  let obj = getOneObject(graph, subject, predicate);
+  return obj && obj.toString();
+}
+
+// returns the first subject having the specified object and predicate, or null if not found
+export function getOneSubject(graph, object, predicate) {
+  let triples = graph.match(null, predicate, object);
   if (triples.length) {
-    return triples.toArray()[0].object.toString();
+    return triples.toArray()[0].subject;
   } else {
-    return '';
+    return null;
   }
+}
+
+// returns the first subject having the specified object and predicate as a string, or null if not found
+export function getOneSubjectString(graph, object, predicate) {
+  let obj = getOneSubject(graph, object, predicate);
+  return obj && obj.toString();
 }
 
 export function fetchGraph(url, tripleMap) {
